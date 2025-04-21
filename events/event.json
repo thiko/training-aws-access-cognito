@@ -1,5 +1,5 @@
 {
-    "body": "{\"username\": \"tko@tekkminds.com\", \"password\": \"test12345\" }",
+    "body": "{\"username\": \"tko@tekkminds.com\", \"password\": \"test1234\" }",
     "resource": "/{proxy+}",
     "path": "/path/to/resource",
     "httpMethod": "POST",
