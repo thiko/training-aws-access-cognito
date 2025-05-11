@@ -19,7 +19,7 @@ In this exercise, you'll create an Amazon Cognito User Pool to manage user authe
    - If you want to start from scratch, clone this sample project:
      ```bash
      # Clone the repository with the sample project
-     git clone <github-path>
+     git clone https://github.com/thiko/training-aws-lambda-sam-01/tree/completed
      cd <project-directory>
      ```
 
