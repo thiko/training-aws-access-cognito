@@ -1,128 +1,241 @@
-# Lab API Gateway + Lambda + Cognito
+# Exercise: Securing APIs with AWS Cognito, API Gateway and Lambda
 
+## Objective
+Learn how to implement user authentication for your serverless APIs using Amazon Cognito, and how to securely handle sensitive configuration using AWS Key Management Service (KMS).
 
-# Precondition
-- Cognito UserPool has been created
+## Overview
+In this exercise, you'll create an Amazon Cognito User Pool to manage user authentication, then integrate it with a Lambda function that verifies user credentials. You'll also learn how to securely handle sensitive information like client IDs and secrets using AWS KMS for encryption.
 
-## 1 Re-Deploy your application
-Open the Lab02 project and deploy it again on your account:
-- `sam build`
-- `sam deploy`
+## Prerequisites
+- Completed the previous SAM Lambda exercise or access to the provided sample project
+- Basic understanding of authentication concepts
 
-In case you did not complete Lab 2, please checkout the project from: 
-and then run:
-- `sam build`
-- `sam deploy --guided`
+## Steps
 
-## 2 Create a Cognito User Pool
-- Open the Cognito service in the browser
-- Select Userpool (Benutzerpool) and then create
-- Give your application a name (tekkminds-awscourse-app01)
-- Select "E-Mail" as authentication option
+### Part 1: Deploy the Base Application
 
-After the Userpool has been created, select *Authentication* (Authentifizierung) and *Sign-In methods* (Authentifizierungsmethoden).
-From there edit the password rules, click on *Custom* and unselect the password requirements.
+1. **Get the project code**
+   - If you completed the previous lab, you can re-use the project but please make sure to copy the `LoginHandler`, `CognitoUserService` and dependencies from `pom.xml` out of this repository.
+   - If you want to start from scratch, clone this sample project:
+     ```bash
+     # Clone the repository with the sample project
+     git clone <github-path>
+     cd <project-directory>
+     ```
 
-**We will do that only for demo purposes - stay on restrict password requirements in real life scenarios!**
+2. **Deploy the application**
+   - If you're using your previous project:
+     ```bash
+     sam build
+     sam deploy
+     ```
+   - If you're using the sample project:
+     ```bash
+     sam build
+     sam deploy --guided
+     ```
+     - Follow the prompts to configure your deployment
+     - Make note of the stack name for later use
 
-## 3 Configure Authentication Flow
+### Part 2: Create a Cognito User Pool
 
-### Flow descriptions
-- `ALLOW_ADMIN_USER_PASSWORD_AUTH`: Authenticate user programmatically by sending Username, Password, ClientId and **Cognito UserPoolId** 
-- `ALLOW_USER_SRP_AUTH`: With this option enabled, we would not send the users password to cognito directly. The client would have to generate a hash based on the password which is send (along the Username) to Cognito. This prevents vaious attacks like man-in-the-middle attacks and is in general recommended when working in insecure networks. On the other hand, the code is slightly more complex.
-- `ALLOW_USER_PASSWORD_AUTH`: Username and password will be send during authentication. Similar to `ALLOW_ADMIN_USER_PASSWORD_AUTH` but without UserPoolId
+1. **Create a new User Pool**
+   - Open the AWS Management Console
+   - Navigate to the Amazon Cognito service
+   - Select "User Pools" and click "Create user pool"
+   - Enter a name for your user pool: `tekkminds-awscourse-app01`
+   - Under "Authentication providers", select "Cognito user pool" only
+   - Under "Cognito user pool sign-in options", select "Email" only
+   - Click "Next"
 
-### What to do
-- Select your App Client and edit it. For Authentication-Flows select `USER_PASSWORD_AUTH` as we will use it in our Lambda. 
-- Save your changes
+2. **Configure security requirements**
+   - On the "Configure security requirements" page:
+   - Under "Password policy", select "Custom"
+   - **For training purposes only**: Uncheck all password requirements
+     > **Note**: In production environments, always maintain strong password requirements!
+   - Keep other settings at their defaults
+   - Click "Next"
 
-## 4 Create a new Cognito User
-Back to your User pool, click on Users (Benutzer) and then **Create a new User**.
-- Enter a valid e-mail address
-- Mark the E-Mail as verified
-- Give it a password. I'll use Test12345.
-- Save the changes by **Create User**
-- Then open your App Client **App Clients -> Show Authenticationsite** in the top right corner.
-- Login with your newly created user. You will be forced to change its password. Do it. I'll use `test1234`
+3. **Configure sign-up experience**
+   - Keep default settings
+   - Click "Next"
 
+4. **Configure message delivery**
+   - Select "Send email with Cognito"
+   - Click "Next"
 
-## 5 Login Handler
-In this lecture, you will need some more dependencies from the AWS SDK as well as google GSON. 
-- `cognitoidentity` and `cognitoidentityprovider` to work with Cogntio (we will use the Cognito API)
-- `kms` is not needed in the first place but can be useful for later usage.
-- `gson` to serialize Java classes to JSON (and vice versa)
-- `apache-client` for http requests
-You can copy my `pom.xml` from: <github-path>
+5. **Integrate your app**
+   - App type: "Public client"
+   - App client name: `tekkminds-client`
+   - Under "Authentication flows":
+     - Select "ALLOW_USER_PASSWORD_AUTH"
+     - This allows simple password-based authentication without requiring the user pool ID
+   - Click "Next"
 
-### 5.1 Required environment variables
-In order to work with the Cognito API, we need the **Client-ID** and the **Client-Secret** in our Lambda function.
-For the first iteration, we will make them available as plaintext enviornment variables. 
-- Open your `template.yaml` file and add two environment variables to your Lambda:
-```
-    Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
-      Variables:
-        MY_COGNITO_POOL_APP_CLIENT_ID: <Your-Client-ID>
-        MY_COGNITO_POOL_APP_CLIENT_SECRET: <Your-Client-Secret>
-```
-Replace the placeholder with values taken from your Cognito Userpool **App Client**.
+6. **Review and create**
+   - Review your settings
+   - Click "Create user pool"
 
-### 5.2 Implement a Service class
-To encapsulate our code a little bit open `CognitoUserService`. Some parts has been implemented already. Try to fill the gaps.
+7. **Note down important information**
+   - After creation, record the following:
+     - User Pool ID
+     - App client ID
+     - App client secret (click "Show client secret" to reveal it)
+   - You'll need these values for your Lambda function
 
+### Part 3: Create a Cognito User
 
-# 6 Test it!
-Again copy the URL of the Login Endpoint in your Prod stage from API-Gateway.
-Send a POST request with `application/json` content type and your login credentials as payload.
-```
-{
-  "username": "<your-email>",
-  "password": "<your-passowrd>"
-}
-```
-You should receive a JSON object with following structure:
-```
-{
-  "isSuccessful": true,
-  "statusCode": 200,
-  "idToken": "",
-  "accessToken": "",
-  "refreshToken": ""
-}
-```
+1. **Add a new user**
+   - In the Cognito console, select your user pool
+   - Go to the "Users" tab
+   - Click "Create user"
+   - Enter a valid email address (you'll use this as the username)
+   - Select "Send an invitation to this new user?" if you want to receive a verification email
+   - Select "Mark email as verified"
+   - Set an initial password (e.g., `Test12345`)
+   - Click "Create user"
 
-## 6 Optional: Encrypted environment variables
-It's never a good idea to store sensitive data in environment variables in plaintext. We did exactly that.
-There are better ways to do that! For example ...
-- Store it in AWS Systems Manager **Param Store** as secret and let Lambda read it from there
-- Store it in AWS Secret Manager (only if you plan to rotate it) and let Lambda read it from there
-- Use the *AWS Parameters and Secrets Lambda Extension* (it caches parameters and secrets)
-- Use encrypted values in your environment variables
+2. **Optional: Complete first sign-in**
+   - In the Cognito console, go to "App integration"
+   - Find "Hosted UI" and click "View client"
+   - Click "View Hosted UI"
+   - Sign in with the email and temporary password
+   - You'll be prompted to change your password
+   - Set a new permanent password (e.g., `test1234`)
 
-In this lecture we will practice the last option (using encrypted environment variables).
+### Part 4: Understanding Authentication Flows
 
-### 6.1 Encrypt your secrets
-Lets utilize the **Key Management Service (KMS)** to encrypt your values.
+In this exercise, we use the USER_PASSWORD_AUTH flow, which has several advantages:
 
-- First open the `Key Management Service` in the AWS Console UI. 
-- Then click on `Customer Managed Keys` (Kundenverwaltete Schlüssel) and select `Create key` (Schlüssel erstellen)
-- Give it a name like `aws-training-rest-api`
-- For the permissions, give our Login Lambda function to **use** but not **manage** the keys
-- Create the key
-- Copy the **ID** of the newly created KMS Key. You need it soon
+1. **Simplicity**: This flow is simpler to implement as it doesn't require the User Pool ID.
 
-**Now lets encrypt your data:**
-- Copy your value of **MY_COGNITO_POOL_APP_CLIENT_ID** 
-- Create a new file *secret* and paste your app client id into. Only the value - no whitespaces, linebreaks etc.
-- Open your CLI and encrpyt your client id using KMS: `aws kms encrypt --key-id <id-of-your-kms-key> --plaintext fileb://secret`
-- This will (hopefuly) return a JSON object. Copy the value of *CyphertextBlob* as value of **MY_COGNITO_POOL_APP_CLIENT_ID** in your `template.yaml` file
-- Do exactly the same for the **MY_COGNITO_POOL_APP_CLIENT_SECRET** (clear the *secret* file first)
-- Delete the secret file
+2. **Client-side friendly**: It can be used directly from mobile or web applications.
 
-**Implement decrypt on Lambda**
-You Lambda function does now receive the encrypted environment variables. We need some custom code to decrypt it.
-Create a new class **DecryptionUtils** and use the following (simplified) implementation:
+3. **Standard authentication model**: Username and password are sent directly to Cognito for verification.
+
+Cognito supports several other authentication flows:
+
+- **USER_SRP_AUTH**: Uses Secure Remote Password protocol to avoid sending the actual password over the network. Better for security-sensitive applications.
+  
+  > **Important Note for Production**: When developing real-world applications, especially frontend applications (browsers, mobile apps) or Single-Page Applications (SPAs) that authenticate directly with Cognito, you should strongly consider using USER_SRP_AUTH instead of USER_PASSWORD_AUTH. The SRP protocol provides significantly better security by never transmitting the actual password over the network, which is critical when authenticating from potentially unsecured client environments.
+
+- **ADMIN_USER_PASSWORD_AUTH**: Requires the User Pool ID and must be called from a secure backend, not directly from clients. This flow uses the AdminInitiateAuth API.
+
+- **REFRESH_TOKEN_AUTH**: Used to obtain new access tokens using a refresh token without requiring the user to sign in again.
+
+Each flow has different security implications and use cases. While the USER_PASSWORD_AUTH flow used in this exercise is suitable for learning purposes, remember that USER_SRP_AUTH would be the recommended choice for production client-side applications.
+
+### Part 5: Update the Lambda Function
+
+1. **Update project dependencies**
+   - When you re-use the project from a previous lab, please make sure to copy all necessary dependencies from this repository.
+   - You have to do nothing if you did a checkout of this repository
+
+2. **Add Cognito credentials to your Lambda function**
+   - Open your `template.yaml` file
+   - Add environment variables to your Lambda function resource:
+     ```yaml
+     Environment:
+       Variables:
+         MY_COGNITO_POOL_APP_CLIENT_ID: <Your-Client-ID>
+         MY_COGNITO_POOL_APP_CLIENT_SECRET: <Your-Client-Secret>
+     ```
+   - Replace the placeholders with the values from your Cognito app client
+
+3. **Update the `CognitoUserService` class**
+The `CognitoUserService` class is only partially implemented. Some important parts are missing. Fix it!
+
+4. **Update the Lambda handler**
+The `LoginHandler` is also not done yet. Fill the gaps!
+
+5. **Build and deploy the updated application**
+   ```bash
+   sam build
+   sam deploy
+   ```
+
+### Part 6: Test the Integration
+
+1. **Test the login endpoint**
+   - Get the API Gateway endpoint URL from the SAM deployment output
+   - Use Postman, curl, or another API tool to send a POST request
+   - Set content type to `application/json`
+   - Include the user credentials in the request body:
+     ```json
+     {
+       "username": "your-email@example.com",
+       "password": "your-password"
+     }
+     ```
+   - Example curl command:
+     ```bash
+     curl -X POST https://your-api-id.execute-api.your-region.amazonaws.com/Prod/users/login \
+     -H "Content-Type: application/json" \
+     -d '{"username":"your-email@example.com","password":"your-password"}'
+     ```
+
+2. **Verify the response**
+   - A successful authentication should return:
+     ```json
+     {
+       "isSuccessful": true,
+       "statusCode": 200,
+       "idToken": "eyJraWQiOiI...",
+       "accessToken": "eyJraWQiOiI...",
+       "refreshToken": "eyJjdHkiOiJ..."
+     }
+     ```
+   - An unsuccessful authentication will return an error message
+
+### Part 7: Enhance Security with KMS Encryption (Optional)
+
+1. **Create a KMS key**
+   - Open the AWS KMS console
+   - Navigate to "Customer managed keys"
+   - Click "Create key"
+   - Key type: Symmetric
+   - Key usage: Encrypt and decrypt
+   - Enter a name: `aws-training-rest-api`
+   - For Key administrators, select your IAM user
+   - For Key usage, select your Lambda execution role
+   - Click "Finish" to create the key
+   - Note the Key ID
+
+2. **Encrypt your sensitive data**
+   - Create a file named `secret` with your Cognito app client ID:
+     ```bash
+     echo -n "your-app-client-id" > secret
+     ```
+   - Encrypt it using the KMS key:
+     ```bash
+     aws kms encrypt --key-id <your-kms-key-id> --plaintext fileb://secret
+     ```
+   - Copy the CiphertextBlob value from the output
+   - Repeat for your app client secret
+
+3. **Update the template.yaml**
+   - Replace the plaintext environment variables with the encrypted values:
+     ```yaml
+     Environment:
+       Variables:
+         MY_COGNITO_POOL_APP_CLIENT_ID: <encrypted-client-id>
+         MY_COGNITO_POOL_APP_CLIENT_SECRET: <encrypted-client-secret>
+     ```
+
+4. **Add decryption utility**
+   - Create a new class `DecryptionUtils.java` in the services package:
 
 ```java
+package com.tekkminds.awscourse.services;
+
+import org.apache.commons.codec.binary.Base64;
+import software.amazon.awssdk.core.SdkBytes;
+import software.amazon.awssdk.services.kms.KmsClient;
+import software.amazon.awssdk.services.kms.model.DecryptRequest;
+
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+
 public class DecryptionUtils {
 
     /**
@@ -139,6 +252,12 @@ public class DecryptionUtils {
             var request = DecryptRequest.builder()
                     .ciphertextBlob(SdkBytes.fromByteBuffer(ByteBuffer.wrap(encryptedKey)))
                     .build();
+            // If you did not encrypt the environment variable manually but through the Lambda-Environment-Variable-UI,
+            //  you could add the encryption context:
+            //  .encryptionContext(Map.of("LambdaFunctionName", System.getenv("AWS_LAMBDA_FUNCTION_NAME")
+            //  This adds another layer of security as this key could not be used by other Lambda functions.
+            //  As we did not specify the encryption context during encryption in this lecture, we should not specify it here.
+
 
             var plainTextKey = client.decrypt(request).plaintext();
             return plainTextKey.asString(StandardCharsets.UTF_8).trim();
@@ -146,12 +265,82 @@ public class DecryptionUtils {
     }
 }
 ```
-(See AWS documentation for an advanced version: https://docs.aws.amazon.com/kms/latest/developerguide/example_kms_Decrypt_section.html)
 
-Then update your Lambda code to utilize the decryption operation:
-```java
-private final String appClientId = DecryptionUtils.decryptEnvironmentVariableByKey("MY_COGNITO_POOL_APP_CLIENT_ID");
-private final String appClientSecret = DecryptionUtils.decryptEnvironmentVariableByKey("MY_COGNITO_POOL_APP_CLIENT_SECRET");
-```
+5. **Update the Lambda handler** (for encrypted environment variables)
+   - Modify how you access the environment variables:
+     ```java
+     private final String appClientId = DecryptionUtils.decryptEnvironmentVariableByKey("MY_COGNITO_POOL_APP_CLIENT_ID");
+     private final String appClientSecret = DecryptionUtils.decryptEnvironmentVariableByKey("MY_COGNITO_POOL_APP_CLIENT_SECRET");
+     ```
 
-Finally build and deploy your code! Is it still working? 
+6. **Update IAM permissions**
+You permitted the Lambda execution role during creation of the KMS Key already.
+Therefore it's not necessary to add any policy statement to the Lambda execution role using SAM.
+
+7. **Build and deploy the updated application**
+   ```bash
+   sam build
+   sam deploy
+   ```
+
+8. **Test the enhanced secure application**
+   - Test the API again to verify that the decryption works correctly
+
+### Part 8: Clean Up
+
+1. **Delete the SAM application**
+   ```bash
+   sam delete <your-stack-name>
+   ```
+
+2. **Delete the Cognito User Pool**
+   - Navigate to the Cognito console
+   - Select your user pool
+   - Click "Delete"
+   - Confirm deletion
+
+3. **Delete the KMS Key** (if created)
+   - Navigate to the KMS console
+   - Select your customer managed key
+   - Click "Schedule key deletion"
+   - Set a waiting period (minimum 7 days)
+   - Confirm deletion
+
+## Verification
+
+You have successfully completed this exercise when:
+- You've created a Cognito User Pool with an app client
+- You've created a user in the pool
+- Your Lambda function can authenticate users against Cognito
+- You can successfully obtain authentication tokens by sending credentials to your API
+- (Optional) You've implemented secure handling of sensitive data using KMS
+
+## Common Issues and Troubleshooting
+
+1. **Authentication failures**:
+   - Double-check the user pool ID, client ID, and client secret
+   - Ensure the user exists and has verified their email
+   - Verify that the USER_PASSWORD_AUTH flow is enabled for your app client
+
+2. **KMS decryption errors**:
+   - Ensure the Lambda execution role has the necessary KMS permissions
+   - Verify that the encrypted text is correctly formatted (Base64 encoded)
+   - Check that you're using the correct KMS key
+
+3. **Missing environment variables**:
+   - Verify that your Lambda function configuration includes all required environment variables
+   - Check for typos in environment variable names
+
+## Extended Learning
+
+1. **Implement token verification**:
+   - Extend your API to verify JWT tokens issued by Cognito
+   - Add a protected endpoint that requires a valid authentication token
+
+2. **Add a Cognito Authorizer to API Gateway**:
+   - Configure API Gateway to validate Cognito tokens automatically
+   - This eliminates the need for manual token validation in your Lambda functions
+
+3. **Implement refresh token functionality**:
+   - Add an endpoint that uses refresh tokens to obtain new access tokens
+   - This allows for longer user sessions without requiring re-authentication
