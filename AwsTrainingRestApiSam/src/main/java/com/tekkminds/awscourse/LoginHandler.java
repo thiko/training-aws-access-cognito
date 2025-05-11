@@ -6,36 +6,41 @@ import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyRequestEvent;
 import com.amazonaws.services.lambda.runtime.events.APIGatewayProxyResponseEvent;
 import com.google.gson.Gson;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Handler for requests to Lambda function.
+ * Handler for Login requests.
  */
 public class LoginHandler implements RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent> {
 
     private final Gson mapper = new Gson();
+    // TODO: instantiate your CognitoUserService - Hint: There is an environment variable called AWS_REGION
+    //  Reading environment variables in Java: System.getenv(...)
+
+    // TODO: Read the client id and client secret from your environment variables
 
     public APIGatewayProxyResponseEvent handleRequest(final APIGatewayProxyRequestEvent input, final Context context) {
-        Map<String, String> headers = new HashMap<>();
-        headers.put("Content-Type", "application/json");
-        headers.put("X-Custom-Header", "application/json");
+        var logger = context.getLogger();
+        var httpHeaders = Map.of(
+                "Content-Type", "application/json"
+        );
 
         APIGatewayProxyResponseEvent response = new APIGatewayProxyResponseEvent()
-                .withHeaders(headers);
+                .withHeaders(httpHeaders);
         try {
 
-            var inputBody = mapper.fromJson(input.getBody(), Map.class);
+            // TODO: Read the request payload as JsonObject: com.google.gson.JsonParser.parseString(input.getBody()).getAsJsonObject();
+            // TODO: Login using your CognitoUserService
 
-            var resultMap = Map.of(
-                    "username", inputBody.get("username"),
-                    "password", inputBody.get("password")
-            );
+            // TODO: Build a response using the services call details
+            //  the mapper offers a toJson(...) method.
 
             return response
-                    .withStatusCode(200)
-                    .withBody(mapper.toJson(resultMap));
+                    .withStatusCode(200);
         } catch (Exception e) {
+
+            // TODO: Use the ErrorResponse record to build a proper error response
+
             return response
                     .withBody("{}")
                     .withStatusCode(500);
