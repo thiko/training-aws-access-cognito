@@ -38,13 +38,13 @@ public class LoginHandler implements RequestHandler<APIGatewayProxyRequestEvent,
             var loginDetails = JsonParser.parseString(input.getBody()).getAsJsonObject();
             var loginResult = cognitoUserService.userLogin(loginDetails, appClientId, appClientSecret);
 
-            response.withBody(new Gson().toJson(loginResult, JsonObject.class));
+            response.withBody(mapper.toJson(loginResult, JsonObject.class));
             response.withStatusCode(200);
 
         } catch (AwsServiceException ex) {
             logger.log(ex.awsErrorDetails().errorMessage());
             ErrorResponse errorResponse = new ErrorResponse(ex.awsErrorDetails().errorMessage());
-            String errorResponseJsonString = new Gson().toJson(errorResponse, ErrorResponse.class);
+            String errorResponseJsonString = mapper.toJson(errorResponse, ErrorResponse.class);
             response.withBody(errorResponseJsonString);
             response.withStatusCode(ex.awsErrorDetails().sdkHttpResponse().statusCode());
         } catch (Exception ex) {

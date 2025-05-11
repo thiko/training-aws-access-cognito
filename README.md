@@ -1,5 +1,8 @@
-# Lab 4 API Gateway + Lambda + Cognito
+# Lab API Gateway + Lambda + Cognito
 
+
+# Precondition
+- Cognito UserPool has been created
 
 ## 1 Re-Deploy your application
 Open the Lab02 project and deploy it again on your account:
@@ -30,7 +33,7 @@ From there edit the password rules, click on *Custom* and unselect the password 
 - `ALLOW_USER_PASSWORD_AUTH`: Username and password will be send during authentication. Similar to `ALLOW_ADMIN_USER_PASSWORD_AUTH` but without UserPoolId
 
 ### What to do
-- Select your App Client and edit it. For Authentication-Flows select `ALLOW_ADMIN_USER_PASSWORD_AUTH` as we will use it in our Lambda. 
+- Select your App Client and edit it. For Authentication-Flows select `USER_PASSWORD_AUTH` as we will use it in our Lambda. 
 - Save your changes
 
 ## 4 Create a new Cognito User
@@ -49,7 +52,7 @@ In this lecture, you will need some more dependencies from the AWS SDK as well a
 - `kms` is not needed in the first place but can be useful for later usage.
 - `gson` to serialize Java classes to JSON (and vice versa)
 - `apache-client` for http requests
-You can copy my `pom.xml` from: 
+You can copy my `pom.xml` from: <github-path>
 
 ### 5.1 Required environment variables
 In order to work with the Cognito API, we need the **Client-ID** and the **Client-Secret** in our Lambda function.
@@ -90,8 +93,9 @@ You should receive a JSON object with following structure:
 ## 6 Optional: Encrypted environment variables
 It's never a good idea to store sensitive data in environment variables in plaintext. We did exactly that.
 There are better ways to do that! For example ...
-- Store it in AWS Systems Manager Param Store as secret and let Lambda read it from there
+- Store it in AWS Systems Manager **Param Store** as secret and let Lambda read it from there
 - Store it in AWS Secret Manager (only if you plan to rotate it) and let Lambda read it from there
+- Use the *AWS Parameters and Secrets Lambda Extension* (it caches parameters and secrets)
 - Use encrypted values in your environment variables
 
 In this lecture we will practice the last option (using encrypted environment variables).

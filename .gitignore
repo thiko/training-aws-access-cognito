@@ -92,3 +92,4 @@ nb-configuration.xml
 .aws-sam
 samconfig.toml
 .idea
+template.private.yaml
