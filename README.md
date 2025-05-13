@@ -34,8 +34,8 @@ In this exercise, you'll create an Amazon Cognito User Pool to manage user authe
      sam build
      sam deploy --guided
      ```
-     - Follow the prompts to configure your deployment
-     - Make note of the stack name for later use
+      - Follow the prompts to configure your deployment
+      - Make note of the stack name for later use
 
 ### Part 2: Create a Cognito User Pool
 
@@ -43,44 +43,37 @@ In this exercise, you'll create an Amazon Cognito User Pool to manage user authe
    - Open the AWS Management Console
    - Navigate to the Amazon Cognito service
    - Select "User Pools" and click "Create user pool"
-   - Enter a name for your user pool: `tekkminds-awscourse-app01`
-   - Under "Authentication providers", select "Cognito user pool" only
+   - Stay on "Common Webapplication" application type
+   - Enter a name for your user pool app client: `tekkminds-awscourse-app01`
    - Under "Cognito user pool sign-in options", select "Email" only
-   - Click "Next"
+   - Set "email" and "phone_number" as required attributes
+   - Click "Create Userpool"
+   - Skip the Code examples (you can open the Login page in a new tab - we can use it later)
 
 2. **Configure security requirements**
-   - On the "Configure security requirements" page:
+   - On the "Authentication methods" page:
    - Under "Password policy", select "Custom"
    - **For training purposes only**: Uncheck all password requirements
      > **Note**: In production environments, always maintain strong password requirements!
    - Keep other settings at their defaults
-   - Click "Next"
+   - Click "Save"
 
-3. **Configure sign-up experience**
-   - Keep default settings
-   - Click "Next"
-
-4. **Configure message delivery**
-   - Select "Send email with Cognito"
-   - Click "Next"
+3. **Nothing to configure in sign-up experience**
 
 5. **Integrate your app**
-   - App type: "Public client"
-   - App client name: `tekkminds-client`
+   - Click on "App-Clients"
+   - Select your app client (`tekkminds-awscourse-app01`)
+   - Click on edit
    - Under "Authentication flows":
-     - Select "ALLOW_USER_PASSWORD_AUTH"
-     - This allows simple password-based authentication without requiring the user pool ID
-   - Click "Next"
+      - Select "ALLOW_USER_PASSWORD_AUTH"
+      - This allows simple password-based authentication without requiring the user pool ID
+   - Click "Save"
 
-6. **Review and create**
-   - Review your settings
-   - Click "Create user pool"
-
-7. **Note down important information**
+6. **Note down important information**
    - After creation, record the following:
-     - User Pool ID
-     - App client ID
-     - App client secret (click "Show client secret" to reveal it)
+      - User Pool ID
+      - App client ID
+      - App client secret (click "Show client secret" to reveal it)
    - You'll need these values for your Lambda function
 
 ### Part 3: Create a Cognito User
@@ -90,15 +83,14 @@ In this exercise, you'll create an Amazon Cognito User Pool to manage user authe
    - Go to the "Users" tab
    - Click "Create user"
    - Enter a valid email address (you'll use this as the username)
-   - Select "Send an invitation to this new user?" if you want to receive a verification email
+   - Deselect "Send an invitation to this new user?"
    - Select "Mark email as verified"
    - Set an initial password (e.g., `Test12345`)
    - Click "Create user"
 
-2. **Optional: Complete first sign-in**
-   - In the Cognito console, go to "App integration"
-   - Find "Hosted UI" and click "View client"
-   - Click "View Hosted UI"
+2. **Complete first sign-in**
+   - In the Cognito console, go to "App clients" and select your app
+   - Find and click on "View Login" (top right)
    - Sign in with the email and temporary password
    - You'll be prompted to change your password
    - Set a new permanent password (e.g., `test1234`)
@@ -116,7 +108,7 @@ In this exercise, we use the USER_PASSWORD_AUTH flow, which has several advantag
 Cognito supports several other authentication flows:
 
 - **USER_SRP_AUTH**: Uses Secure Remote Password protocol to avoid sending the actual password over the network. Better for security-sensitive applications.
-  
+
   > **Important Note for Production**: When developing real-world applications, especially frontend applications (browsers, mobile apps) or Single-Page Applications (SPAs) that authenticate directly with Cognito, you should strongly consider using USER_SRP_AUTH instead of USER_PASSWORD_AUTH. The SRP protocol provides significantly better security by never transmitting the actual password over the network, which is critical when authenticating from potentially unsecured client environments.
 
 - **ADMIN_USER_PASSWORD_AUTH**: Requires the User Pool ID and must be called from a secure backend, not directly from clients. This flow uses the AdminInitiateAuth API.
@@ -143,10 +135,10 @@ Each flow has different security implications and use cases. While the USER_PASS
    - Replace the placeholders with the values from your Cognito app client
 
 3. **Update the `CognitoUserService` class**
-The `CognitoUserService` class is only partially implemented. Some important parts are missing. Fix it!
+   The `CognitoUserService` class is only partially implemented. Some important parts are missing. Fix it!
 
 4. **Update the Lambda handler**
-The `LoginHandler` is also not done yet. Fill the gaps!
+   The `LoginHandler` is also not done yet. Fill the gaps!
 
 5. **Build and deploy the updated application**
    ```bash
@@ -274,8 +266,8 @@ public class DecryptionUtils {
      ```
 
 6. **Update IAM permissions**
-You permitted the Lambda execution role during creation of the KMS Key already.
-Therefore it's not necessary to add any policy statement to the Lambda execution role using SAM.
+   You permitted the Lambda execution role during creation of the KMS Key already.
+   Therefore it's not necessary to add any policy statement to the Lambda execution role using SAM.
 
 7. **Build and deploy the updated application**
    ```bash
@@ -293,11 +285,7 @@ Therefore it's not necessary to add any policy statement to the Lambda execution
    sam delete <your-stack-name>
    ```
 
-2. **Delete the Cognito User Pool**
-   - Navigate to the Cognito console
-   - Select your user pool
-   - Click "Delete"
-   - Confirm deletion
+2. **Keep the Cognito User Pool for upcoming labs**
 
 3. **Delete the KMS Key** (if created)
    - Navigate to the KMS console
