@@ -43,40 +43,33 @@ In this exercise, you'll create an Amazon Cognito User Pool to manage user authe
    - Open the AWS Management Console
    - Navigate to the Amazon Cognito service
    - Select "User Pools" and click "Create user pool"
-   - Enter a name for your user pool: `tekkminds-awscourse-app01`
-   - Under "Authentication providers", select "Cognito user pool" only
+   - Stay on "Common Webapplication" application type
+   - Enter a name for your user pool app client: `tekkminds-awscourse-app01`
    - Under "Cognito user pool sign-in options", select "Email" only
-   - Click "Next"
+   - Set "email" and "phone_number" as required attributes
+   - Click "Create Userpool"
+   - Skip the Code examples (you can open the Login page in a new tab - we can use it later)
 
 2. **Configure security requirements**
-   - On the "Configure security requirements" page:
+   - On the "Authentication methods" page:
    - Under "Password policy", select "Custom"
    - **For training purposes only**: Uncheck all password requirements
      > **Note**: In production environments, always maintain strong password requirements!
    - Keep other settings at their defaults
-   - Click "Next"
+   - Click "Save"
 
-3. **Configure sign-up experience**
-   - Keep default settings
-   - Click "Next"
-
-4. **Configure message delivery**
-   - Select "Send email with Cognito"
-   - Click "Next"
-
+3. **Nothing to configure in sign-up experience**
+   
 5. **Integrate your app**
-   - App type: "Public client"
-   - App client name: `tekkminds-client`
+   - Click on "App-Clients"
+   - Select your app client (`tekkminds-awscourse-app01`)
+   - Click on edit
    - Under "Authentication flows":
      - Select "ALLOW_USER_PASSWORD_AUTH"
      - This allows simple password-based authentication without requiring the user pool ID
-   - Click "Next"
+   - Click "Save"
 
-6. **Review and create**
-   - Review your settings
-   - Click "Create user pool"
-
-7. **Note down important information**
+6. **Note down important information**
    - After creation, record the following:
      - User Pool ID
      - App client ID
@@ -90,15 +83,14 @@ In this exercise, you'll create an Amazon Cognito User Pool to manage user authe
    - Go to the "Users" tab
    - Click "Create user"
    - Enter a valid email address (you'll use this as the username)
-   - Select "Send an invitation to this new user?" if you want to receive a verification email
+   - Deselect "Send an invitation to this new user?"
    - Select "Mark email as verified"
    - Set an initial password (e.g., `Test12345`)
    - Click "Create user"
 
-2. **Optional: Complete first sign-in**
-   - In the Cognito console, go to "App integration"
-   - Find "Hosted UI" and click "View client"
-   - Click "View Hosted UI"
+2. **Complete first sign-in**
+   - In the Cognito console, go to "App clients" and select your app
+   - Find and click on "View Login" (top right)
    - Sign in with the email and temporary password
    - You'll be prompted to change your password
    - Set a new permanent password (e.g., `test1234`)
@@ -293,11 +285,7 @@ Therefore it's not necessary to add any policy statement to the Lambda execution
    sam delete <your-stack-name>
    ```
 
-2. **Delete the Cognito User Pool**
-   - Navigate to the Cognito console
-   - Select your user pool
-   - Click "Delete"
-   - Confirm deletion
+2. **Keep the Cognito User Pool for upcoming labs**
 
 3. **Delete the KMS Key** (if created)
    - Navigate to the KMS console
